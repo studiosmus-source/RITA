@@ -1,0 +1,27 @@
+name: Deploy Stella a GitHub Pages
+
+on:
+  push:
+    branches:
+      - claude/stella-app-design-DtEJQ
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy su gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web
+          commit_message: 'deploy: Stella app aggiornata'
+          force_orphan: true
