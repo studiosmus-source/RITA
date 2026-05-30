@@ -1,0 +1,8 @@
+node_modules/
+.gradle/
+.idea/
+build/
+*.keystore
+*.apk
+*.aab
+.env
