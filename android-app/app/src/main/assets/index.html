@@ -87,6 +87,16 @@ body{background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFon
 .di{font-size:42px;margin-bottom:8px}.dn{font-size:26px;font-weight:800;color:#fff}
 .dt{font-size:11px;color:rgba(255,255,255,.52);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-top:3px}
 .dnum{font-size:16px;color:rgba(255,255,255,.85);font-family:'Courier New',monospace;letter-spacing:3px;margin-top:9px;margin-bottom:16px}
+/* fullscreen barcode */
+.fbc-wrap{background:#fff;border-radius:32px 32px 0 0;padding:20px 20px calc(20px + var(--safe));max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .32s cubic-bezier(.16,1,.3,1)}
+.mov.on .fbc-wrap{transform:translateY(0)}
+.fbc-name{text-align:center;color:#111;font-size:18px;font-weight:800;margin-bottom:4px}
+.fbc-tipo{text-align:center;color:#666;font-size:11px;letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-bottom:22px}
+.fbc-svg{padding:0 4px;overflow:hidden}
+.fbc-num{text-align:center;color:#222;font-size:15px;font-family:'Courier New',monospace;letter-spacing:3px;margin-top:16px;margin-bottom:8px}
+.fbc-hint{text-align:center;color:#999;font-size:12px;margin-bottom:22px}
+.fbc-del{background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:14px;padding:14px;color:#cc3333;font-size:14px;font-weight:700;width:100%;cursor:pointer;margin-bottom:8px}
+.fbc-close{background:none;border:none;color:#888;font-size:14px;padding:12px;width:100%;cursor:pointer}
 </style>
 </head>
 <body>
@@ -100,10 +110,25 @@ body{background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFon
   <button class="nb" data-s="g"><span class="ico">✨</span><span class="lbl">Gossip</span></button>
 </nav>
 <button class="fab" id="fab">+</button>
+<!-- preset picker -->
 <div class="mov" id="mp"><div class="msh"><div class="mh"></div><div class="mt">Seleziona tessera</div><div class="pgrid" id="pg"></div><button class="bm" id="bman">✏️ Aggiungi manualmente</button><button class="bc" id="cpr">Annulla</button></div></div>
+<!-- add form -->
 <div class="mov" id="ma"><div class="msh"><div class="mh"></div><div class="mt">Nuova Tessera</div><div id="prev"></div><label class="ilbl">Nome</label><input class="inp" id="in" placeholder="Es. Esselunga" autocomplete="off"><label class="ilbl">Numero / Codice</label><input class="inp" id="inum" placeholder="Inserisci il codice" autocomplete="off"><button class="bs" id="bscan">📷 Scansiona codice a barre</button><button class="bp" id="bsv">Salva Tessera</button><button class="bc" id="cadd">Annulla</button></div></div>
-<div class="mov" id="md"><div class="msh"><div class="mh"></div><div id="dc"></div><button class="bd" id="bdel">🗑 Elimina tessera</button><button class="bs" id="cdt">Chiudi</button></div></div>
+<!-- barcode scanner -->
 <div class="mov" id="msc"><div class="msh"><div class="mh"></div><div class="mt">Scansiona codice</div><div class="swrap"><video id="svid" autoplay playsinline muted></video><div class="sov"><div class="sfr"><div class="sln"></div></div></div></div><div class="shit">Inquadra il codice a barre della tessera.<br>Rilevamento automatico.</div><button class="bc" id="csc">Annulla</button></div></div>
+<!-- fullscreen barcode -->
+<div class="mov" id="mfbc">
+  <div class="fbc-wrap">
+    <div class="mh" style="background:rgba(0,0,0,.15)"></div>
+    <div class="fbc-name" id="fbc-name"></div>
+    <div class="fbc-tipo" id="fbc-tipo"></div>
+    <div class="fbc-svg" id="fbc-svg"></div>
+    <div class="fbc-num" id="fbc-num"></div>
+    <div class="fbc-hint">☀️ Aumenta la luminosità per la scansione</div>
+    <button class="fbc-del" id="fbc-del">🗑 Elimina tessera</button>
+    <button class="fbc-close" id="fbc-close">Chiudi</button>
+  </div>
+</div>
 </div>
 <script>
 const PR=[{n:'Esselunga',t:'Supermercato',e:'🛒',g:['#2E3192','#1BFFFF']},{n:'Conad',t:'Supermercato',e:'🛒',g:['#D31027','#EA384D']},{n:'Carrefour',t:'Supermercato',e:'🛒',g:['#0052CC','#2684FF']},{n:'Coop',t:'Supermercato',e:'🛒',g:['#11998e','#38ef7d']},{n:'Eurospin',t:'Supermercato',e:'🛒',g:['#FC466B','#3F5EFB']},{n:'Lidl',t:'Supermercato',e:'🛒',g:['#005BBB','#FFD500']},{n:'Aldi',t:'Supermercato',e:'🛒',g:['#1A6B3C','#52C97D']},{n:'Auchan',t:'Supermercato',e:'🛒',g:['#FF416C','#FF4B2B']},{n:'Penny',t:'Supermercato',e:'🛒',g:['#DA8A67','#E96464']},{n:'Pam',t:'Supermercato',e:'🛒',g:['#F7971E','#FFD200']},{n:'Tigrì',t:'Supermercato',e:'🛒',g:['#0066cc','#00aaff']},{n:'Tessera Sanitaria',t:'Sanitaria',e:'🏥',g:['#2193b0','#6dd5ed']},{n:'Farmacia',t:'Farmacia',e:'💊',g:['#0f9b58','#56ccf2']},{n:'Personale',t:'Altro',e:'💳',g:['#7F00FF','#E100FF']}];
@@ -116,15 +141,56 @@ const $=id=>document.getElementById(id);
 const fc=s=>s.replace(/(.{4})/g,'$1 ').trim();
 const sv=()=>localStorage.setItem('st_t',JSON.stringify(tessere));
 const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-function barcode(code,w=180,h=36){const seed=code.split('').reduce((a,c)=>a+c.charCodeAt(0),97);let r='',x=2;for(let i=0;i<58;i++){const bw=((seed*(i+1)*13)%3)+1,bh=((seed*(i+3)*7)%18)+h*.45,gap=((seed*(i+5))%3);if((seed*(i+2))%3!==0)r+=`<rect x="${x}" y="${h-bh}" width="${bw}" height="${bh}" fill="rgba(255,255,255,.84)"/>`;x+=bw+gap;if(x>w-4)break;}return`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" style="display:block">${r}</svg>`;}
+
+function barcode(code,w=180,h=36){
+  const seed=code.split('').reduce((a,c)=>a+c.charCodeAt(0),97);
+  let r='',x=2;
+  for(let i=0;i<58;i++){
+    const bw=((seed*(i+1)*13)%3)+1,bh=((seed*(i+3)*7)%18)+h*.45,gap=((seed*(i+5))%3);
+    if((seed*(i+2))%3!==0)r+=`<rect x="${x}" y="${h-bh}" width="${bw}" height="${bh}" fill="rgba(255,255,255,.84)"/>`;
+    x+=bw+gap;if(x>w-4)break;
+  }
+  return`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" style="display:block">${r}</svg>`;
+}
+
+function barcodeFS(code){
+  const w=Math.min(window.innerWidth-48,420);
+  const h=110;
+  const seed=code.split('').reduce((a,c)=>a+c.charCodeAt(0),97);
+  let r='',x=3;
+  for(let i=0;i<110;i++){
+    const bw=((seed*(i+1)*13)%3)+1,bh=((seed*(i+3)*7)%38)+h*.55,gap=((seed*(i+5))%2);
+    if((seed*(i+2))%3!==0)r+=`<rect x="${x}" y="${h-bh}" width="${bw}" height="${bh}" fill="#111"/>`;
+    x+=bw+gap;if(x>w-4)break;
+  }
+  return`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" style="display:block;background:#fff;border-radius:8px">${r}</svg>`;
+}
+
 function nav(s){document.querySelectorAll('.scr').forEach(e=>e.classList.remove('on'));document.querySelectorAll('.nb').forEach(e=>e.classList.remove('on'));$('s-'+s).classList.add('on');document.querySelector(`[data-s="${s}"]`).classList.add('on');$('fab').style.display=s==='t'?'flex':'none';if(s==='m'&&!ml)loadMeteo();if(s==='g'&&!gl)loadGossip();}
 document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.s)));
 const om=id=>$(id).classList.add('on'),cm=id=>$(id).classList.remove('on');
-['mp','ma','md','msc'].forEach(id=>{$(id).addEventListener('click',e=>{if(e.target===$(id)){if(id==='msc')stopScan();cm(id);}});});
-function renderT(){const c=$('tc');if(!tessere.length){c.innerHTML='<div class="es"><div class="es-i">💳</div><div class="es-t">Nessuna tessera</div><div class="es-s">Tocca + per aggiungerne una</div></div>';return;}c.innerHTML='<div class="clist">'+tessere.map(t=>`<div class="tc" data-id="${t.id}" style="background:linear-gradient(135deg,${t.g[0]},${t.g[1]})"><div class="ch"><span class="cemo">${t.e}</span><span class="ctipo">${t.t}</span></div><div class="cname">${esc(t.n)}</div><div class="cnum">${fc(t.num)}</div>${barcode(t.num)}</div>`).join('')+'</div>';c.querySelectorAll('.tc').forEach(el=>el.addEventListener('click',()=>openDetail(el.dataset.id)));}
-function openDetail(id){const t=tessere.find(x=>x.id===id);if(!t)return;selId=id;$('dc').innerHTML=`<div class="dcard" style="background:linear-gradient(135deg,${t.g[0]},${t.g[1]})"><div class="di">${t.e}</div><div class="dn">${esc(t.n)}</div><div class="dt">${t.t}</div><div class="dnum">${fc(t.num)}</div>${barcode(t.num,220,46)}</div>`;om('md');}
-$('bdel').addEventListener('click',()=>{if(!confirm('Eliminare questa tessera?'))return;tessere=tessere.filter(t=>t.id!==selId);sv();cm('md');renderT();});
-$('cdt').addEventListener('click',()=>cm('md'));
+['mp','ma','msc'].forEach(id=>{$(id).addEventListener('click',e=>{if(e.target===$(id)){if(id==='msc')stopScan();cm(id);}});});
+$('mfbc').addEventListener('click',e=>{if(e.target===$('mfbc'))cm('mfbc');});
+
+function renderT(){const c=$('tc');if(!tessere.length){c.innerHTML='<div class="es"><div class="es-i">💳</div><div class="es-t">Nessuna tessera</div><div class="es-s">Tocca + per aggiungerne una</div></div>';return;}c.innerHTML='<div class="clist">'+tessere.map(t=>`<div class="tc" data-id="${t.id}" style="background:linear-gradient(135deg,${t.g[0]},${t.g[1]})"><div class="ch"><span class="cemo">${t.e}</span><span class="ctipo">${t.t}</span></div><div class="cname">${esc(t.n)}</div><div class="cnum">${fc(t.num)}</div>${barcode(t.num)}</div>`).join('')+'</div>';c.querySelectorAll('.tc').forEach(el=>el.addEventListener('click',()=>openBarcode(el.dataset.id)));}
+
+function openBarcode(id){
+  const t=tessere.find(x=>x.id===id);
+  if(!t)return;
+  selId=id;
+  $('fbc-name').textContent=t.n;
+  $('fbc-tipo').textContent=t.t;
+  $('fbc-svg').innerHTML=barcodeFS(t.num);
+  $('fbc-num').textContent=fc(t.num);
+  om('mfbc');
+}
+$('fbc-close').addEventListener('click',()=>cm('mfbc'));
+$('fbc-del').addEventListener('click',()=>{
+  if(!confirm('Eliminare questa tessera?'))return;
+  tessere=tessere.filter(t=>t.id!==selId);
+  sv();cm('mfbc');renderT();
+});
+
 $('fab').addEventListener('click',openPreset);
 function openPreset(){$('pg').innerHTML=PR.map((p,i)=>`<button class="pit" data-i="${i}" style="background:linear-gradient(135deg,${p.g[0]},${p.g[1]})"><span class="e">${p.e}</span><span class="n">${p.n}</span></button>`).join('');$('pg').querySelectorAll('.pit').forEach(b=>b.addEventListener('click',()=>{const p=PR[+b.dataset.i];cf={n:p.n,num:'',t:p.t,g:p.g,e:p.e};cm('mp');openAdd();}));om('mp');}
 $('bman').addEventListener('click',()=>{cf={n:'',num:'',t:'Altro',g:['#7F00FF','#E100FF'],e:'💳'};cm('mp');openAdd();});
@@ -137,6 +203,7 @@ $('cadd').addEventListener('click',()=>cm('ma'));
 $('bscan').addEventListener('click',startScan);$('csc').addEventListener('click',()=>{stopScan();cm('msc');});
 async function startScan(){try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280}}});sstream=stream;$('svid').srcObject=stream;om('msc');if('BarcodeDetector'in window){const det=new BarcodeDetector({formats:['code_128','ean_13','ean_8','upc_a','upc_e','qr_code','data_matrix','itf']});const vid=$('svid');sint=setInterval(async()=>{try{const bs=await det.detect(vid);if(bs.length>0){stopScan();cm('msc');$('inum').value=bs[0].rawValue;updPrev();}}catch(_){}},350);}else{setTimeout(()=>{stopScan();cm('msc');const c=prompt('Inserisci il codice manualmente:');if(c){$('inum').value=c.trim();updPrev();}},500);}}catch(e){alert('Fotocamera non disponibile');}}
 function stopScan(){if(sint){clearInterval(sint);sint=null;}if(sstream){sstream.getTracks().forEach(t=>t.stop());sstream=null;}}
+
 const WD=c=>{if(c===0)return'Sereno';if(c<=2)return'Poco nuvoloso';if(c===3)return'Coperto';if(c<=48)return'Nebbia';if(c<=55)return'Pioggerella';if(c<=67)return'Pioggia';if(c<=77)return'Neve';if(c<=82)return'Rovesci';if(c<=99)return'Temporale';return'Variabile';};
 const WI=c=>{if(c===0)return'☀️';if(c<=2)return'⛅';if(c===3)return'☁️';if(c<=48)return'🌫️';if(c<=55)return'🌦️';if(c<=67)return'🌧️';if(c<=77)return'❄️';if(c<=82)return'🌦️';if(c<=99)return'⛈️';return'🌤️';};
 const WBG=d=>{const s=d.toLowerCase();if(s.includes('sereno')||s.includes('poco'))return['#1a6699','#56CCF2'];if(s.includes('coperto'))return['#3a3a5c','#6e6e9e'];if(s.includes('pioggia')||s.includes('rov'))return['#1c2d40','#3a6ea8'];if(s.includes('neve'))return['#6b7c8c','#b0c0cd'];if(s.includes('temporale'))return['#0a0820','#1e1254'];if(s.includes('nebbia'))return['#4a5160','#6e7a8a'];return['#1A1A2E','#16213E'];};
@@ -144,9 +211,25 @@ async function loadMeteo(){ml=true;const c=$('mc');c.innerHTML='<div class="es">
 async function fetchMCoords(lat,lon){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=it`,{headers:{'User-Agent':'StellaApp/1.0'}});const d=await r.json();const city=d.address?.city||d.address?.town||d.address?.village||'Roma';fetchMCity(city);}catch{fetchMCity('Roma');}}
 async function fetchMCity(city){const c=$('mc');try{const gr=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=it&format=json`);const gd=await gr.json();if(!gd.results?.length)throw 0;const{latitude:lat,longitude:lon,name}=gd.results[0];const mr=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe/Rome&forecast_days=4`);const md=await mr.json();const cur=md.current,daily=md.daily,desc=WD(cur.weather_code),bg=WBG(desc);$('s-m').style.background=`linear-gradient(155deg,${bg[0]},${bg[1]})`;const prev=daily.time.slice(1,4).map((d,i)=>({g:GG[new Date(d).getDay()],min:Math.round(daily.temperature_2m_min[i+1]),max:Math.round(daily.temperature_2m_max[i+1]),i:WI(daily.weather_code[i+1]),d:WD(daily.weather_code[i+1])}));const now=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});c.innerHTML=`<div class="mcard"><div class="mcity">📍 ${esc(name)}</div><div class="mico">${WI(cur.weather_code)}</div><div class="mtemp">${Math.round(cur.temperature_2m)}°</div><div class="mdesc">${desc}</div><div class="mrow"><div class="mdet"><span class="mdi">💧</span><span class="mdv">${cur.relative_humidity_2m}%</span><span class="mdl">Umidità</span></div><div class="mdivl"></div><div class="mdet"><span class="mdi">💨</span><span class="mdv">${Math.round(cur.wind_speed_10m)} km/h</span><span class="mdl">Vento</span></div></div></div><div class="ftit">Prossimi 3 giorni</div><div class="flist">${prev.map(p=>`<div class="frow"><span class="fday">${p.g}</span><span class="fico">${p.i}</span><span class="fdesc">${p.d}</span><div class="ftemps"><div class="fmax">${p.max}°</div><div class="fmin">${p.min}°</div></div></div>`).join('')}</div><div class="upd">Aggiornato alle ${now} · Open-Meteo</div><button class="rbtn" onclick="reloadM()">&#x1F504; Aggiorna posizione</button>`;}catch{c.innerHTML='<div class="es"><div class="es-i">🌩️</div><div class="es-t" style="font-size:16px;margin-top:12px">Impossibile caricare il meteo.<br>Controlla la connessione.</div><button class="bp" style="max-width:200px;margin-top:20px" onclick="reloadM()">Riprova</button></div>';}}
 function reloadM(){ml=false;loadMeteo();}
-const FEEDS=[{url:'https://www.gossipetv.com/feed',src:'GossipTV'},{url:'https://tvblog.it/feed/',src:'TVBlog'},{url:'https://www.bitchyf.it/feed/',src:'BitchyF'}];
-function fmtDate(s){try{return new Date(s).toLocaleDateString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch{return s||'';}}
-async function loadGossip(){gl=true;const c=$('gc');c.innerHTML='<div class="es"><div class="spin"></div><div class="stxt">Caricando le ultime notizie…</div></div>';const all=[];await Promise.allSettled(FEEDS.map(async({url,src})=>{try{const r=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`);const d=await r.json();if(d.status==='ok'&&d.items)d.items.forEach(it=>{if(it.title&&it.link)all.push({id:it.guid||it.link,title:it.title.replace(/<[^>]+>/g,'').trim(),desc:(it.description||'').replace(/<[^>]+>/g,'').trim().substring(0,180),link:it.link,date:fmtDate(it.pubDate),src});});}catch(_){}}));if(!all.length){c.innerHTML='<div class="es"><div class="es-i">📰</div><div class="es-t">Nessuna notizia</div><div class="es-s">Controlla la connessione e riprova.</div><button class="bp" style="max-width:200px;margin-top:20px" onclick="reloadG()">Riprova</button></div>';return;}const seen=new Set();const uni=all.filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true;}).slice(0,40);c.innerHTML=uni.map((it,i)=>{const ac=AC[i%AC.length];return`<div class="gc" onclick="window.open('${esc(it.link)}','_blank')"><div class="gstrip" style="background:linear-gradient(180deg,${ac[0]},${ac[1]})"></div><div class="gbody"><div class="gmeta"><span class="gsrc">${it.src}</span><span class="gdate">${it.date}</span></div><div class="gtit">${esc(it.title)}</div>${it.desc?`<div class="gdesc">${esc(it.desc)}</div>`:''}</div></div>`;}).join('');}
+
+const FEEDS=[
+  {url:'https://www.gossipetv.com/feed',src:'GossipTV'},
+  {url:'https://tvblog.it/feed/',src:'TVBlog'},
+  {url:'https://www.bitchyf.it/feed/',src:'BitchyF'},
+  {url:'https://www.davidemaggio.it/feed',src:'DavideMaggio'}
+];
+function fmtDate(s){try{return new Date(s).toLocaleDateString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch{return s||'';} }
+async function fetchRSS(url,src){
+  const r=await fetch(url,{headers:{'Accept':'application/rss+xml,application/xml,text/xml,*/*'}});
+  const txt=await r.text();
+  const xml=new DOMParser().parseFromString(txt,'text/xml');
+  return Array.from(xml.querySelectorAll('item')).slice(0,20).map(el=>{
+    const g=t=>(el.querySelector(t)?.textContent||'').trim();
+    const desc=g('description').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim().substring(0,180);
+    return{id:g('guid')||g('link'),title:g('title'),desc,link:g('link'),date:fmtDate(g('pubDate')),src};
+  }).filter(it=>it.title&&it.link);
+}
+async function loadGossip(){gl=true;const c=$('gc');c.innerHTML='<div class="es"><div class="spin"></div><div class="stxt">Caricando le ultime notizie…</div></div>';const all=[];await Promise.allSettled(FEEDS.map(async f=>{try{const items=await fetchRSS(f.url,f.src);all.push(...items);}catch(_){}}));if(!all.length){c.innerHTML='<div class="es"><div class="es-i">📰</div><div class="es-t">Nessuna notizia</div><div class="es-s">Controlla la connessione e riprova.</div><button class="bp" style="max-width:200px;margin-top:20px" onclick="reloadG()">Riprova</button></div>';return;}const seen=new Set();const uni=all.filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true;}).slice(0,40);c.innerHTML=uni.map((it,i)=>{const ac=AC[i%AC.length];return`<div class="gc" onclick="window.open('${esc(it.link)}','_blank')"><div class="gstrip" style="background:linear-gradient(180deg,${ac[0]},${ac[1]})"></div><div class="gbody"><div class="gmeta"><span class="gsrc">${it.src}</span><span class="gdate">${it.date}</span></div><div class="gtit">${esc(it.title)}</div>${it.desc?`<div class="gdesc">${esc(it.desc)}</div>`:''}</div></div>`;}).join('');}
 function reloadG(){gl=false;loadGossip();}
 renderT();
 </script>
