@@ -83,20 +83,15 @@ body{background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFon
 .stxt{font-size:15px;color:rgba(255,255,255,.45);text-align:center;padding:0 32px;line-height:1.6;margin-top:6px}
 .upd{text-align:center;color:rgba(255,255,255,.28);font-size:11px;margin:18px 0 4px;padding:0 16px}
 .rbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;width:calc(100% - 32px);margin:0 16px 100px;display:block}
-.dcard{border-radius:22px;padding:26px;margin-bottom:18px}
-.di{font-size:42px;margin-bottom:8px}.dn{font-size:26px;font-weight:800;color:#fff}
-.dt{font-size:11px;color:rgba(255,255,255,.52);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-top:3px}
-.dnum{font-size:16px;color:rgba(255,255,255,.85);font-family:'Courier New',monospace;letter-spacing:3px;margin-top:9px;margin-bottom:16px}
-/* fullscreen barcode */
-.fbc-wrap{background:#fff;border-radius:32px 32px 0 0;padding:20px 20px calc(20px + var(--safe));max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .32s cubic-bezier(.16,1,.3,1)}
+.fbc-wrap{background:#fff;border-radius:32px 32px 0 0;padding:24px 20px calc(20px + var(--safe));max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .32s cubic-bezier(.16,1,.3,1)}
 .mov.on .fbc-wrap{transform:translateY(0)}
-.fbc-name{text-align:center;color:#111;font-size:18px;font-weight:800;margin-bottom:4px}
-.fbc-tipo{text-align:center;color:#666;font-size:11px;letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-bottom:22px}
-.fbc-svg{padding:0 4px;overflow:hidden}
-.fbc-num{text-align:center;color:#222;font-size:15px;font-family:'Courier New',monospace;letter-spacing:3px;margin-top:16px;margin-bottom:8px}
-.fbc-hint{text-align:center;color:#999;font-size:12px;margin-bottom:22px}
+.fbc-name{text-align:center;color:#111;font-size:18px;font-weight:800;margin-bottom:3px}
+.fbc-tipo{text-align:center;color:#888;font-size:11px;letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-bottom:24px}
+.fbc-svg{overflow:hidden;text-align:center}
+.fbc-num{text-align:center;color:#333;font-size:14px;font-family:'Courier New',monospace;letter-spacing:3px;margin-top:14px;margin-bottom:6px}
+.fbc-hint{text-align:center;color:#aaa;font-size:11px;margin-bottom:24px}
 .fbc-del{background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:14px;padding:14px;color:#cc3333;font-size:14px;font-weight:700;width:100%;cursor:pointer;margin-bottom:8px}
-.fbc-close{background:none;border:none;color:#888;font-size:14px;padding:12px;width:100%;cursor:pointer}
+.fbc-close{background:none;border:none;color:#999;font-size:14px;padding:12px;width:100%;cursor:pointer}
 </style>
 </head>
 <body>
@@ -110,13 +105,9 @@ body{background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFon
   <button class="nb" data-s="g"><span class="ico">✨</span><span class="lbl">Gossip</span></button>
 </nav>
 <button class="fab" id="fab">+</button>
-<!-- preset picker -->
 <div class="mov" id="mp"><div class="msh"><div class="mh"></div><div class="mt">Seleziona tessera</div><div class="pgrid" id="pg"></div><button class="bm" id="bman">✏️ Aggiungi manualmente</button><button class="bc" id="cpr">Annulla</button></div></div>
-<!-- add form -->
 <div class="mov" id="ma"><div class="msh"><div class="mh"></div><div class="mt">Nuova Tessera</div><div id="prev"></div><label class="ilbl">Nome</label><input class="inp" id="in" placeholder="Es. Esselunga" autocomplete="off"><label class="ilbl">Numero / Codice</label><input class="inp" id="inum" placeholder="Inserisci il codice" autocomplete="off"><button class="bs" id="bscan">📷 Scansiona codice a barre</button><button class="bp" id="bsv">Salva Tessera</button><button class="bc" id="cadd">Annulla</button></div></div>
-<!-- barcode scanner -->
 <div class="mov" id="msc"><div class="msh"><div class="mh"></div><div class="mt">Scansiona codice</div><div class="swrap"><video id="svid" autoplay playsinline muted></video><div class="sov"><div class="sfr"><div class="sln"></div></div></div></div><div class="shit">Inquadra il codice a barre della tessera.<br>Rilevamento automatico.</div><button class="bc" id="csc">Annulla</button></div></div>
-<!-- fullscreen barcode -->
 <div class="mov" id="mfbc">
   <div class="fbc-wrap">
     <div class="mh" style="background:rgba(0,0,0,.15)"></div>
@@ -142,28 +133,64 @@ const fc=s=>s.replace(/(.{4})/g,'$1 ').trim();
 const sv=()=>localStorage.setItem('st_t',JSON.stringify(tessere));
 const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-function barcode(code,w=180,h=36){
-  const seed=code.split('').reduce((a,c)=>a+c.charCodeAt(0),97);
-  let r='',x=2;
-  for(let i=0;i<58;i++){
-    const bw=((seed*(i+1)*13)%3)+1,bh=((seed*(i+3)*7)%18)+h*.45,gap=((seed*(i+5))%3);
-    if((seed*(i+2))%3!==0)r+=`<rect x="${x}" y="${h-bh}" width="${bw}" height="${bh}" fill="rgba(255,255,255,.84)"/>`;
-    x+=bw+gap;if(x>w-4)break;
-  }
-  return`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" style="display:block">${r}</svg>`;
+// --- EAN-13 encoder ---
+function barcodeEAN13(num){
+  const L=['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+  const G=['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
+  const R=['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+  const PAR=[[0,0,0,0,0,0],[0,0,1,0,1,1],[0,0,1,1,0,1],[0,0,1,1,1,0],[0,1,0,0,1,1],[0,1,1,0,0,1],[0,1,1,1,0,0],[0,1,0,1,0,1],[0,1,0,1,1,0],[0,1,1,0,1,0]];
+  const s=num.replace(/\D/g,'').padStart(12,'0').slice(0,12);
+  const d=s.split('').map(Number);
+  const c=(10-(d.reduce((a,v,i)=>a+v*(i%2?3:1),0)%10))%10;
+  const a=[...d,c];
+  const p=PAR[a[0]];
+  let b='000000000101';
+  for(let i=1;i<=6;i++)b+=p[i-1]?G[a[i]]:L[a[i]];
+  b+='01010';
+  for(let i=7;i<=12;i++)b+=R[a[i]];
+  b+='101000000000';
+  return b;
 }
 
-function barcodeFS(code){
-  const w=Math.min(window.innerWidth-48,420);
-  const h=110;
-  const seed=code.split('').reduce((a,c)=>a+c.charCodeAt(0),97);
-  let r='',x=3;
-  for(let i=0;i<110;i++){
-    const bw=((seed*(i+1)*13)%3)+1,bh=((seed*(i+3)*7)%38)+h*.55,gap=((seed*(i+5))%2);
-    if((seed*(i+2))%3!==0)r+=`<rect x="${x}" y="${h-bh}" width="${bw}" height="${bh}" fill="#111"/>`;
-    x+=bw+gap;if(x>w-4)break;
+// --- Code 128 B encoder ---
+function barcodeC128(text){
+  const P=['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100'];
+  const t=text.replace(/[^ -~]/g,'').slice(0,48)||(String.fromCharCode(48));
+  let bits='11010010000',check=104;
+  for(let i=0;i<t.length;i++){const v=t.charCodeAt(i)-32;check+=(i+1)*v;bits+=P[v];}
+  bits+=P[check%103]+'1100011101011';
+  return bits;
+}
+
+// --- bit string to SVG bars ---
+function bits2svg(bits,w,h,darkOnWhite){
+  const mw=w/bits.length;
+  const fill=darkOnWhite?'#1a1a1a':'rgba(255,255,255,.85)';
+  let rects='',i=0;
+  while(i<bits.length){
+    if(bits[i]==='1'){
+      let j=i+1;while(j<bits.length&&bits[j]==='1')j++;
+      const x1=Math.round(i*mw),x2=Math.round(j*mw);
+      rects+=`<rect x="${x1}" y="0" width="${Math.max(1,x2-x1)}" height="${h}" fill="${fill}"/>`;
+      i=j;
+    }else i++;
   }
-  return`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" style="display:block;background:#fff;border-radius:8px">${r}</svg>`;
+  const bg=darkOnWhite?'background:#fff;border-radius:10px;':'';
+  return`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" style="display:block;${bg}" shape-rendering="crispEdges">${rects}</svg>`;
+}
+
+// small barcode for card list (white bars on coloured card)
+function barcode(code,w=180,h=36){
+  const bits=barcodeC128((code||'0').replace(/[\s-]/g,''));
+  return bits2svg(bits,w,h,false);
+}
+
+// fullscreen scannable barcode
+function barcodeFS(code){
+  const clean=(code||'0').replace(/[\s-]/g,'');
+  const bits=/^\d{12,13}$/.test(clean)?barcodeEAN13(clean):barcodeC128(clean);
+  const w=Math.min(window.innerWidth-40,400),h=100;
+  return bits2svg(bits,w,h,true);
 }
 
 function nav(s){document.querySelectorAll('.scr').forEach(e=>e.classList.remove('on'));document.querySelectorAll('.nb').forEach(e=>e.classList.remove('on'));$('s-'+s).classList.add('on');document.querySelector(`[data-s="${s}"]`).classList.add('on');$('fab').style.display=s==='t'?'flex':'none';if(s==='m'&&!ml)loadMeteo();if(s==='g'&&!gl)loadGossip();}
@@ -175,8 +202,7 @@ $('mfbc').addEventListener('click',e=>{if(e.target===$('mfbc'))cm('mfbc');});
 function renderT(){const c=$('tc');if(!tessere.length){c.innerHTML='<div class="es"><div class="es-i">💳</div><div class="es-t">Nessuna tessera</div><div class="es-s">Tocca + per aggiungerne una</div></div>';return;}c.innerHTML='<div class="clist">'+tessere.map(t=>`<div class="tc" data-id="${t.id}" style="background:linear-gradient(135deg,${t.g[0]},${t.g[1]})"><div class="ch"><span class="cemo">${t.e}</span><span class="ctipo">${t.t}</span></div><div class="cname">${esc(t.n)}</div><div class="cnum">${fc(t.num)}</div>${barcode(t.num)}</div>`).join('')+'</div>';c.querySelectorAll('.tc').forEach(el=>el.addEventListener('click',()=>openBarcode(el.dataset.id)));}
 
 function openBarcode(id){
-  const t=tessere.find(x=>x.id===id);
-  if(!t)return;
+  const t=tessere.find(x=>x.id===id);if(!t)return;
   selId=id;
   $('fbc-name').textContent=t.n;
   $('fbc-tipo').textContent=t.t;
@@ -185,11 +211,7 @@ function openBarcode(id){
   om('mfbc');
 }
 $('fbc-close').addEventListener('click',()=>cm('mfbc'));
-$('fbc-del').addEventListener('click',()=>{
-  if(!confirm('Eliminare questa tessera?'))return;
-  tessere=tessere.filter(t=>t.id!==selId);
-  sv();cm('mfbc');renderT();
-});
+$('fbc-del').addEventListener('click',()=>{if(!confirm('Eliminare questa tessera?'))return;tessere=tessere.filter(t=>t.id!==selId);sv();cm('mfbc');renderT();});
 
 $('fab').addEventListener('click',openPreset);
 function openPreset(){$('pg').innerHTML=PR.map((p,i)=>`<button class="pit" data-i="${i}" style="background:linear-gradient(135deg,${p.g[0]},${p.g[1]})"><span class="e">${p.e}</span><span class="n">${p.n}</span></button>`).join('');$('pg').querySelectorAll('.pit').forEach(b=>b.addEventListener('click',()=>{const p=PR[+b.dataset.i];cf={n:p.n,num:'',t:p.t,g:p.g,e:p.e};cm('mp');openAdd();}));om('mp');}
@@ -218,7 +240,7 @@ const FEEDS=[
   {url:'https://www.bitchyf.it/feed/',src:'BitchyF'},
   {url:'https://www.davidemaggio.it/feed',src:'DavideMaggio'}
 ];
-function fmtDate(s){try{return new Date(s).toLocaleDateString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch{return s||'';} }
+function fmtDate(s){try{return new Date(s).toLocaleDateString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch{return s||'';}}
 async function fetchRSS(url,src){
   const r=await fetch(url,{headers:{'Accept':'application/rss+xml,application/xml,text/xml,*/*'}});
   const txt=await r.text();
