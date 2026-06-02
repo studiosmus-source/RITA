@@ -55,7 +55,7 @@ body{background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFon
 .sln{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:sc 2s ease-in-out infinite}
 @keyframes sc{0%,100%{top:5%}50%{top:88%}}
 .shit{color:rgba(255,255,255,.45);text-align:center;font-size:13px;margin-bottom:14px;line-height:1.5}
-.mcard{margin:0 16px 22px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.15);border-radius:28px;padding:28px;text-align:center}
+.mcard{margin:0 16px 16px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.15);border-radius:28px;padding:28px;text-align:center}
 .mcity{color:rgba(255,255,255,.75);font-size:16px;font-weight:600;margin-bottom:14px}
 .mico{font-size:84px;line-height:1}.mtemp{font-size:78px;font-weight:800;color:#fff;line-height:1.1;margin-top:4px}
 .mdesc{font-size:19px;color:rgba(255,255,255,.8);margin-top:8px;font-weight:500}
@@ -63,6 +63,16 @@ body{background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFon
 .mdet{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
 .mdi{font-size:24px}.mdv{font-size:18px;font-weight:700;color:#fff}.mdl{font-size:11px;color:rgba(255,255,255,.4)}
 .mdivl{width:1px;background:rgba(255,255,255,.18);align-self:stretch;margin:0 6px}
+/* hourly strip */
+.hstrip{display:flex;overflow-x:auto;gap:10px;padding:0 16px 16px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.hstrip::-webkit-scrollbar{display:none}
+.hcol{flex-shrink:0;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:13px 12px;text-align:center;min-width:62px}
+.hcol.now{background:rgba(255,215,0,.18);border-color:rgba(255,215,0,.35)}
+.htlbl{font-size:11px;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:7px}
+.hcol.now .htlbl{color:var(--gold)}
+.hico{font-size:24px}
+.htemp{font-size:15px;font-weight:700;color:#fff;margin-top:6px}
+/* daily forecast */
 .ftit{font-size:16px;font-weight:700;color:var(--gold);padding:0 16px;margin-bottom:10px}
 .flist{padding:0 16px 110px;display:flex;flex-direction:column;gap:9px}
 .frow{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;display:flex;align-items:center}
@@ -81,7 +91,7 @@ body{background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFon
 .spin{width:44px;height:44px;border:3.5px solid rgba(255,215,0,.18);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .stxt{font-size:15px;color:rgba(255,255,255,.45);text-align:center;padding:0 32px;line-height:1.6;margin-top:6px}
-.upd{text-align:center;color:rgba(255,255,255,.28);font-size:11px;margin:18px 0 4px;padding:0 16px}
+.upd{text-align:center;color:rgba(255,255,255,.28);font-size:11px;margin:4px 0 8px;padding:0 16px}
 .rbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;width:calc(100% - 32px);margin:0 16px 100px;display:block}
 .fbc-wrap{background:#fff;border-radius:32px 32px 0 0;padding:24px 20px calc(20px + var(--safe));max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .32s cubic-bezier(.16,1,.3,1)}
 .mov.on .fbc-wrap{transform:translateY(0)}
@@ -133,7 +143,6 @@ const fc=s=>s.replace(/(.{4})/g,'$1 ').trim();
 const sv=()=>localStorage.setItem('st_t',JSON.stringify(tessere));
 const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-// --- EAN-13 encoder ---
 function barcodeEAN13(num){
   const L=['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
   const G=['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
@@ -142,8 +151,7 @@ function barcodeEAN13(num){
   const s=num.replace(/\D/g,'').padStart(12,'0').slice(0,12);
   const d=s.split('').map(Number);
   const c=(10-(d.reduce((a,v,i)=>a+v*(i%2?3:1),0)%10))%10;
-  const a=[...d,c];
-  const p=PAR[a[0]];
+  const a=[...d,c];const p=PAR[a[0]];
   let b='000000000101';
   for(let i=1;i<=6;i++)b+=p[i-1]?G[a[i]]:L[a[i]];
   b+='01010';
@@ -151,8 +159,6 @@ function barcodeEAN13(num){
   b+='101000000000';
   return b;
 }
-
-// --- Code 128 B encoder ---
 function barcodeC128(text){
   const P=['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100'];
   const t=text.replace(/[^ -~]/g,'').slice(0,48)||(String.fromCharCode(48));
@@ -161,37 +167,18 @@ function barcodeC128(text){
   bits+=P[check%103]+'1100011101011';
   return bits;
 }
-
-// --- bit string to SVG bars ---
 function bits2svg(bits,w,h,darkOnWhite){
   const mw=w/bits.length;
   const fill=darkOnWhite?'#1a1a1a':'rgba(255,255,255,.85)';
   let rects='',i=0;
   while(i<bits.length){
-    if(bits[i]==='1'){
-      let j=i+1;while(j<bits.length&&bits[j]==='1')j++;
-      const x1=Math.round(i*mw),x2=Math.round(j*mw);
-      rects+=`<rect x="${x1}" y="0" width="${Math.max(1,x2-x1)}" height="${h}" fill="${fill}"/>`;
-      i=j;
-    }else i++;
+    if(bits[i]==='1'){let j=i+1;while(j<bits.length&&bits[j]==='1')j++;const x1=Math.round(i*mw),x2=Math.round(j*mw);rects+=`<rect x="${x1}" y="0" width="${Math.max(1,x2-x1)}" height="${h}" fill="${fill}"/>`;i=j;}else i++;
   }
   const bg=darkOnWhite?'background:#fff;border-radius:10px;':'';
   return`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" style="display:block;${bg}" shape-rendering="crispEdges">${rects}</svg>`;
 }
-
-// small barcode for card list (white bars on coloured card)
-function barcode(code,w=180,h=36){
-  const bits=barcodeC128((code||'0').replace(/[\s-]/g,''));
-  return bits2svg(bits,w,h,false);
-}
-
-// fullscreen scannable barcode
-function barcodeFS(code){
-  const clean=(code||'0').replace(/[\s-]/g,'');
-  const bits=/^\d{12,13}$/.test(clean)?barcodeEAN13(clean):barcodeC128(clean);
-  const w=Math.min(window.innerWidth-40,400),h=100;
-  return bits2svg(bits,w,h,true);
-}
+function barcode(code,w=180,h=36){const bits=barcodeC128((code||'0').replace(/[\s-]/g,''));return bits2svg(bits,w,h,false);}
+function barcodeFS(code){const clean=(code||'0').replace(/[\s-]/g,'');const bits=/^\d{12,13}$/.test(clean)?barcodeEAN13(clean):barcodeC128(clean);const w=Math.min(window.innerWidth-40,400),h=100;return bits2svg(bits,w,h,true);}
 
 function nav(s){document.querySelectorAll('.scr').forEach(e=>e.classList.remove('on'));document.querySelectorAll('.nb').forEach(e=>e.classList.remove('on'));$('s-'+s).classList.add('on');document.querySelector(`[data-s="${s}"]`).classList.add('on');$('fab').style.display=s==='t'?'flex':'none';if(s==='m'&&!ml)loadMeteo();if(s==='g'&&!gl)loadGossip();}
 document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.s)));
@@ -201,15 +188,7 @@ $('mfbc').addEventListener('click',e=>{if(e.target===$('mfbc'))cm('mfbc');});
 
 function renderT(){const c=$('tc');if(!tessere.length){c.innerHTML='<div class="es"><div class="es-i">💳</div><div class="es-t">Nessuna tessera</div><div class="es-s">Tocca + per aggiungerne una</div></div>';return;}c.innerHTML='<div class="clist">'+tessere.map(t=>`<div class="tc" data-id="${t.id}" style="background:linear-gradient(135deg,${t.g[0]},${t.g[1]})"><div class="ch"><span class="cemo">${t.e}</span><span class="ctipo">${t.t}</span></div><div class="cname">${esc(t.n)}</div><div class="cnum">${fc(t.num)}</div>${barcode(t.num)}</div>`).join('')+'</div>';c.querySelectorAll('.tc').forEach(el=>el.addEventListener('click',()=>openBarcode(el.dataset.id)));}
 
-function openBarcode(id){
-  const t=tessere.find(x=>x.id===id);if(!t)return;
-  selId=id;
-  $('fbc-name').textContent=t.n;
-  $('fbc-tipo').textContent=t.t;
-  $('fbc-svg').innerHTML=barcodeFS(t.num);
-  $('fbc-num').textContent=fc(t.num);
-  om('mfbc');
-}
+function openBarcode(id){const t=tessere.find(x=>x.id===id);if(!t)return;selId=id;$('fbc-name').textContent=t.n;$('fbc-tipo').textContent=t.t;$('fbc-svg').innerHTML=barcodeFS(t.num);$('fbc-num').textContent=fc(t.num);om('mfbc');}
 $('fbc-close').addEventListener('click',()=>cm('mfbc'));
 $('fbc-del').addEventListener('click',()=>{if(!confirm('Eliminare questa tessera?'))return;tessere=tessere.filter(t=>t.id!==selId);sv();cm('mfbc');renderT();});
 
@@ -229,9 +208,47 @@ function stopScan(){if(sint){clearInterval(sint);sint=null;}if(sstream){sstream.
 const WD=c=>{if(c===0)return'Sereno';if(c<=2)return'Poco nuvoloso';if(c===3)return'Coperto';if(c<=48)return'Nebbia';if(c<=55)return'Pioggerella';if(c<=67)return'Pioggia';if(c<=77)return'Neve';if(c<=82)return'Rovesci';if(c<=99)return'Temporale';return'Variabile';};
 const WI=c=>{if(c===0)return'☀️';if(c<=2)return'⛅';if(c===3)return'☁️';if(c<=48)return'🌫️';if(c<=55)return'🌦️';if(c<=67)return'🌧️';if(c<=77)return'❄️';if(c<=82)return'🌦️';if(c<=99)return'⛈️';return'🌤️';};
 const WBG=d=>{const s=d.toLowerCase();if(s.includes('sereno')||s.includes('poco'))return['#1a6699','#56CCF2'];if(s.includes('coperto'))return['#3a3a5c','#6e6e9e'];if(s.includes('pioggia')||s.includes('rov'))return['#1c2d40','#3a6ea8'];if(s.includes('neve'))return['#6b7c8c','#b0c0cd'];if(s.includes('temporale'))return['#0a0820','#1e1254'];if(s.includes('nebbia'))return['#4a5160','#6e7a8a'];return['#1A1A2E','#16213E'];};
+
 async function loadMeteo(){ml=true;const c=$('mc');c.innerHTML='<div class="es"><div class="spin"></div><div class="stxt">Rilevando la posizione…</div></div>';if(!navigator.geolocation){fetchMCity('Roma');return;}navigator.geolocation.getCurrentPosition(p=>fetchMCoords(p.coords.latitude,p.coords.longitude),()=>fetchMCity('Roma'),{timeout:10000,maximumAge:120000});}
 async function fetchMCoords(lat,lon){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=it`,{headers:{'User-Agent':'StellaApp/1.0'}});const d=await r.json();const city=d.address?.city||d.address?.town||d.address?.village||'Roma';fetchMCity(city);}catch{fetchMCity('Roma');}}
-async function fetchMCity(city){const c=$('mc');try{const gr=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=it&format=json`);const gd=await gr.json();if(!gd.results?.length)throw 0;const{latitude:lat,longitude:lon,name}=gd.results[0];const mr=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe/Rome&forecast_days=4`);const md=await mr.json();const cur=md.current,daily=md.daily,desc=WD(cur.weather_code),bg=WBG(desc);$('s-m').style.background=`linear-gradient(155deg,${bg[0]},${bg[1]})`;const prev=daily.time.slice(1,4).map((d,i)=>({g:GG[new Date(d).getDay()],min:Math.round(daily.temperature_2m_min[i+1]),max:Math.round(daily.temperature_2m_max[i+1]),i:WI(daily.weather_code[i+1]),d:WD(daily.weather_code[i+1])}));const now=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});c.innerHTML=`<div class="mcard"><div class="mcity">📍 ${esc(name)}</div><div class="mico">${WI(cur.weather_code)}</div><div class="mtemp">${Math.round(cur.temperature_2m)}°</div><div class="mdesc">${desc}</div><div class="mrow"><div class="mdet"><span class="mdi">💧</span><span class="mdv">${cur.relative_humidity_2m}%</span><span class="mdl">Umidità</span></div><div class="mdivl"></div><div class="mdet"><span class="mdi">💨</span><span class="mdv">${Math.round(cur.wind_speed_10m)} km/h</span><span class="mdl">Vento</span></div></div></div><div class="ftit">Prossimi 3 giorni</div><div class="flist">${prev.map(p=>`<div class="frow"><span class="fday">${p.g}</span><span class="fico">${p.i}</span><span class="fdesc">${p.d}</span><div class="ftemps"><div class="fmax">${p.max}°</div><div class="fmin">${p.min}°</div></div></div>`).join('')}</div><div class="upd">Aggiornato alle ${now} · Open-Meteo</div><button class="rbtn" onclick="reloadM()">&#x1F504; Aggiorna posizione</button>`;}catch{c.innerHTML='<div class="es"><div class="es-i">🌩️</div><div class="es-t" style="font-size:16px;margin-top:12px">Impossibile caricare il meteo.<br>Controlla la connessione.</div><button class="bp" style="max-width:200px;margin-top:20px" onclick="reloadM()">Riprova</button></div>';}}
+async function fetchMCity(city){const c=$('mc');try{
+  const gr=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=it&format=json`);
+  const gd=await gr.json();
+  if(!gd.results?.length)throw 0;
+  const{latitude:lat,longitude:lon,name}=gd.results[0];
+  const mr=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=Europe%2FRome&forecast_days=2`);
+  const md=await mr.json();
+  const cur=md.current,daily=md.daily,hourly=md.hourly;
+  const desc=WD(cur.weather_code),bg=WBG(desc);
+  $('s-m').style.background=`linear-gradient(155deg,${bg[0]},${bg[1]})`;
+  // prossimi 3 giorni
+  const prev=daily.time.slice(1,4).map((d,i)=>({g:GG[new Date(d).getDay()],min:Math.round(daily.temperature_2m_min[i+1]),max:Math.round(daily.temperature_2m_max[i+1]),i:WI(daily.weather_code[i+1]),d:WD(daily.weather_code[i+1])}));
+  // striscia oraria: prossime 12 ore da adesso
+  const nowMs=Date.now();
+  const hours=hourly.time.map((t,i)=>({ts:new Date(t).getTime(),h:new Date(t).getHours(),temp:Math.round(hourly.temperature_2m[i]),code:hourly.weather_code[i]})).filter(h=>h.ts>=nowMs-1800000).slice(0,12);
+  const nowHour=new Date().getHours();
+  const hourHtml=hours.map((h,idx)=>`<div class="hcol${idx===0?' now':''}"><div class="htlbl">${idx===0?'Ora':h.h+':00'}</div><div class="hico">${WI(h.code)}</div><div class="htemp">${h.temp}°</div></div>`).join('');
+  const now=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  c.innerHTML=`
+    <div class="mcard">
+      <div class="mcity">📍 ${esc(name)}</div>
+      <div class="mico">${WI(cur.weather_code)}</div>
+      <div class="mtemp">${Math.round(cur.temperature_2m)}°</div>
+      <div class="mdesc">${desc}</div>
+      <div class="mrow">
+        <div class="mdet"><span class="mdi">💧</span><span class="mdv">${cur.relative_humidity_2m}%</span><span class="mdl">Umidità</span></div>
+        <div class="mdivl"></div>
+        <div class="mdet"><span class="mdi">💨</span><span class="mdv">${Math.round(cur.wind_speed_10m)} km/h</span><span class="mdl">Vento</span></div>
+      </div>
+    </div>
+    <div class="ftit">Ora per ora</div>
+    <div class="hstrip">${hourHtml}</div>
+    <div class="ftit">Prossimi 3 giorni</div>
+    <div class="flist">${prev.map(p=>`<div class="frow"><span class="fday">${p.g}</span><span class="fico">${p.i}</span><span class="fdesc">${p.d}</span><div class="ftemps"><div class="fmax">${p.max}°</div><div class="fmin">${p.min}°</div></div></div>`).join('')}</div>
+    <div class="upd">Aggiornato alle ${now} · Open-Meteo</div>
+    <button class="rbtn" onclick="reloadM()">&#x1F504; Aggiorna posizione</button>
+  `;
+}catch{c.innerHTML='<div class="es"><div class="es-i">🌩️</div><div class="es-t" style="font-size:16px;margin-top:12px">Impossibile caricare il meteo.<br>Controlla la connessione.</div><button class="bp" style="max-width:200px;margin-top:20px" onclick="reloadM()">Riprova</button></div>';}}
 function reloadM(){ml=false;loadMeteo();}
 
 const FEEDS=[
