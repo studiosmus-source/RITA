@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="theme-color" content="#1A1A2E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Stella - Tessere, Meteo e Gossip">
+<title>Stella ✨</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<style>
+:root{
+  --bg:#1A1A2E;--bg2:#16213E;--gold:#FFD700;--pur:#6C63FF;
+  --nh:68px;--safe:env(safe-area-inset-bottom,.5px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--bg);color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  height:100dvh;overflow:hidden;user-select:none;
+}
+#app{display:flex;flex-direction:column;height:100dvh}
+
+/* SCREENS */
+.scr{flex:1;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;-webkit-overflow-scrolling:touch}
+.scr.on{display:flex;animation:fi .28s ease}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADER */
+.hdr{
+  padding:50px 24px 14px;
+  background:linear-gradient(180deg,var(--bg) 55%,transparent);
+  position:sticky;top:0;z-index:10;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.h1{font-size:28px;font-weight:800;color:var(--gold);letter-spacing:.5px}
+.h2{font-size:14px;color:rgba(255,255,255,.42);margin-top:2px;font-weight:500}
+
+/* NAV */
+.nav{
+  height:var(--nh);background:#080816;
+  border-top:1px solid rgba(108,99,255,.18);
+  display:flex;align-items:center;justify-content:space-around;
+  padding-bottom:var(--safe);flex-shrink:0;
+  box-shadow:0 -3px 18px rgba(108,99,255,.07);
+}
+.nb{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;cursor:pointer;padding:8px 22px;
+  transition:transform .15s;
+}
+.nb:active{transform:scale(.9)}
+.nb .ico{font-size:22px;opacity:.38;transition:opacity .2s}
+.nb .lbl{font-size:10px;color:rgba(255,255,255,.28);font-weight:700;letter-spacing:.3px;transition:color .2s}
+.nb.on .ico{opacity:1}
+.nb.on .lbl{color:var(--gold)}
+
+/* TESSERE CARDS */
+.clist{padding:6px 16px 100px;display:flex;flex-direction:column;gap:14px}
+.tc{
+  border-radius:22px;padding:22px;cursor:pointer;
+  box-shadow:0 8px 26px rgba(0,0,0,.35);
+  transition:transform .15s;min-height:148px;
+  display:flex;flex-direction:column;
+  border:1px solid rgba(255,255,255,.07);
+}
+.tc:active{transform:scale(.97)}
+.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cemo{font-size:28px}
+.ctipo{font-size:10px;color:rgba(255,255,255,.6);letter-spacing:1.8px;font-weight:700;text-transform:uppercase}
+.cname{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px}
+.cnum{font-size:12px;color:rgba(255,255,255,.75);font-family:'Courier New',monospace;letter-spacing:2.5px;margin-bottom:10px}
+
+/* FAB */
+.fab{
+  position:fixed;bottom:calc(var(--nh) + 14px);right:22px;
+  width:60px;height:60px;border-radius:30px;
+  background:linear-gradient(135deg,#FFD700,#FFA500);
+  border:none;cursor:pointer;font-size:32px;color:#1A1A2E;font-weight:900;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 22px rgba(255,200,0,.5);transition:transform .15s;z-index:90;line-height:1;
+}
+.fab:active{transform:scale(.9)}
+
+/* MODALS */
+.mov{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);
+  z-index:200;display:flex;flex-direction:column;justify-content:flex-end;
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+.mov.on{opacity:1;pointer-events:all}
+.msh{
+  background:#0e0e26;border-radius:32px 32px 0 0;
+  padding:20px 20px calc(20px + var(--safe));max-height:92vh;overflow-y:auto;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.16,1,.3,1);
+}
+.mov.on .msh{transform:translateY(0)}
+.mh{width:36px;height:4px;background:rgba(255,255,255,.16);border-radius:2px;margin:0 auto 18px}
+.mt{font-size:19px;font-weight:800;color:var(--gold);text-align:center;margin-bottom:18px}
+
+/* FORM */
+.ilbl{display:block;font-size:11px;color:rgba(255,255,255,.42);letter-spacing:1.1px;font-weight:700;text-transform:uppercase;margin-bottom:7px}
+.inp{
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  border-radius:13px;padding:15px;color:#fff;font-size:16px;width:100%;
+  margin-bottom:14px;outline:none;font-family:inherit;transition:border-color .2s;
+}
+.inp:focus{border-color:rgba(108,99,255,.5)}
+
+/* BUTTONS */
+.bp{background:linear-gradient(135deg,#FFD700,#FFA500);border:none;border-radius:14px;padding:17px;color:#1A1A2E;font-size:16px;font-weight:800;width:100%;cursor:pointer;margin-bottom:10px;transition:transform .15s}
+.bp:active{transform:scale(.97)}
+.bs{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:15px;color:#fff;font-size:15px;font-weight:600;width:100%;cursor:pointer;margin-bottom:10px;transition:transform .15s}
+.bs:active{transform:scale(.97)}
+.bd{background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.24);border-radius:14px;padding:15px;color:#FF6B6B;font-size:15px;font-weight:700;width:100%;cursor:pointer;margin-bottom:10px;transition:transform .15s}
+.bm{background:rgba(108,99,255,.17);border:1px solid rgba(108,99,255,.33);border-radius:14px;padding:15px;color:#A78BFA;font-size:15px;font-weight:700;width:100%;cursor:pointer;margin-top:10px;transition:transform .15s}
+.bc{background:none;border:none;color:rgba(255,255,255,.28);font-size:14px;padding:12px;width:100%;cursor:pointer}
+
+/* PRESET GRID */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;max-height:50vh;overflow-y:auto}
+.pit{border-radius:15px;padding:16px;cursor:pointer;text-align:center;border:none;display:flex;flex-direction:column;align-items:center;gap:7px;transition:transform .15s}
+.pit:active{transform:scale(.94)}
+.pit .e{font-size:26px}.pit .n{color:#fff;font-weight:700;font-size:11px;line-height:1.3}
+
+/* PREVIEW */
+.cprev{border-radius:16px;padding:18px;margin-bottom:18px}
+
+/* SCANNER */
+.swrap{position:relative;width:100%;aspect-ratio:1;border-radius:18px;overflow:hidden;background:#000;margin-bottom:16px}
+#svid{width:100%;height:100%;object-fit:cover}
+.sov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.sfr{width:70%;height:22%;border:2.5px solid var(--gold);border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);position:relative;overflow:hidden}
+.sln{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);top:0;animation:sc 2s ease-in-out infinite}
+@keyframes sc{0%,100%{top:5%}50%{top:88%}}
+.shit{color:rgba(255,255,255,.45);text-align:center;font-size:13px;margin-bottom:14px;line-height:1.5}
+
+/* METEO */
+.mcard{
+  margin:0 16px 22px;
+  background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.15);
+  border-radius:28px;padding:28px;text-align:center;
+}
+.mcity{color:rgba(255,255,255,.75);font-size:16px;font-weight:600;margin-bottom:14px}
+.mico{font-size:84px;line-height:1}
+.mtemp{font-size:78px;font-weight:800;color:#fff;line-height:1.1;margin-top:4px}
+.mdesc{font-size:19px;color:rgba(255,255,255,.8);margin-top:8px;font-weight:500}
+.mrow{display:flex;margin-top:26px}
+.mdet{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.mdi{font-size:24px}.mdv{font-size:18px;font-weight:700;color:#fff}.mdl{font-size:11px;color:rgba(255,255,255,.4)}
+.mdivl{width:1px;background:rgba(255,255,255,.18);align-self:stretch;margin:0 6px}
+.ftit{font-size:16px;font-weight:700;color:var(--gold);padding:0 16px;margin-bottom:10px}
+.flist{padding:0 16px 110px;display:flex;flex-direction:column;gap:9px}
+.frow{
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;padding:16px;display:flex;align-items:center;
+}
+.fday{font-weight:700;font-size:15px;width:42px;color:#fff}
+.fico{font-size:26px;margin:0 10px}
+.fdesc{flex:1;color:rgba(255,255,255,.6);font-size:13px}
+.ftemps{text-align:right}
+.fmax{font-size:17px;font-weight:700;color:#fff}.fmin{font-size:13px;color:rgba(255,255,255,.4);margin-top:1px}
+
+/* GOSSIP */
+.gc{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;display:flex;cursor:pointer;transition:transform .15s;margin-bottom:11px}
+.gc:active{transform:scale(.98)}
+.gstrip{width:5px;flex-shrink:0}
+.gbody{flex:1;padding:14px}
+.gmeta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.gsrc{background:rgba(108,99,255,.3);color:#C4B5FD;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:.5px}
+.gdate{color:rgba(255,255,255,.28);font-size:10px}
+.gtit{color:#fff;font-size:14px;font-weight:700;line-height:20px;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.gdesc{color:rgba(255,255,255,.4);font-size:12px;line-height:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* STATES */
+.es{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:80px;gap:10px;text-align:center}
+.es-i{font-size:68px}.es-t{font-size:20px;font-weight:700;color:#fff}.es-s{font-size:13px;color:rgba(255,255,255,.4);padding:0 36px;line-height:1.5}
+.spin{width:44px;height:44px;border:3.5px solid rgba(255,215,0,.18);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.stxt{font-size:15px;color:rgba(255,255,255,.45);text-align:center;padding:0 32px;line-height:1.6;margin-top:6px}
+.upd{text-align:center;color:rgba(255,255,255,.28);font-size:11px;margin:18px 0 4px;padding:0 16px}
+.rbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;width:calc(100% - 32px);margin:0 16px 100px;display:block;transition:transform .15s}
+.rbtn:active{transform:scale(.97)}
+
+/* DETAIL */
+.dcard{border-radius:22px;padding:26px;margin-bottom:18px}
+.di{font-size:42px;margin-bottom:8px}
+.dn{font-size:26px;font-weight:800;color:#fff}
+.dt{font-size:11px;color:rgba(255,255,255,.52);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-top:3px}
+.dnum{font-size:16px;color:rgba(255,255,255,.85);font-family:'Courier New',monospace;letter-spacing:3px;margin-top:9px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TESSERE -->
+<div id="s-t" class="scr on">
+  <div class="hdr"><div class="h1">✨ Stella</div><div class="h2">Le mie Tessere</div></div>
+  <div id="tc"></div>
+</div>
+
+<!-- METEO -->
+<div id="s-m" class="scr">
+  <div class="hdr"><div class="h1">✨ Stella</div><div class="h2">Meteo</div></div>
+  <div id="mc"></div>
+</div>
+
+<!-- GOSSIP -->
+<div id="s-g" class="scr">
+  <div class="hdr"><div class="h1">✨ Stella</div><div class="h2">Gossip &amp; Spettacolo</div></div>
+  <div id="gc" style="padding:4px 14px 110px"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nb on" data-s="t"><span class="ico">💳</span><span class="lbl">Tessere</span></button>
+  <button class="nb"     data-s="m"><span class="ico">🌤</span><span class="lbl">Meteo</span></button>
+  <button class="nb"     data-s="g"><span class="ico">✨</span><span class="lbl">Gossip</span></button>
+</nav>
+
+<button class="fab" id="fab">+</button>
+
+<!-- MODAL: PRESET -->
+<div class="mov" id="mp">
+  <div class="msh">
+    <div class="mh"></div>
+    <div class="mt">Seleziona tessera</div>
+    <div class="pgrid" id="pg"></div>
+    <button class="bm" id="bman">✏️&nbsp; Aggiungi manualmente</button>
+    <button class="bc" id="cpr">Annulla</button>
+  </div>
+</div>
+
+<!-- MODAL: ADD -->
+<div class="mov" id="ma">
+  <div class="msh">
+    <div class="mh"></div>
+    <div class="mt">Nuova Tessera</div>
+    <div id="prev"></div>
+    <label class="ilbl">Nome</label>
+    <input class="inp" id="in" placeholder="Es. Esselunga" autocomplete="off">
+    <label class="ilbl">Numero / Codice</label>
+    <input class="inp" id="inum" placeholder="Inserisci il codice" autocomplete="off" inputmode="text">
+    <button class="bs" id="bscan">📷&nbsp; Scansiona codice a barre</button>
+    <button class="bp" id="bsv">Salva Tessera</button>
+    <button class="bc" id="cadd">Annulla</button>
+  </div>
+</div>
+
+<!-- MODAL: DETAIL -->
+<div class="mov" id="md">
+  <div class="msh">
+    <div class="mh"></div>
+    <div id="dc"></div>
+    <button class="bd" id="bdel">🗑&nbsp; Elimina tessera</button>
+    <button class="bs" id="cdt">Chiudi</button>
+  </div>
+</div>
+
+<!-- MODAL: SCANNER -->
+<div class="mov" id="msc">
+  <div class="msh">
+    <div class="mh"></div>
+    <div class="mt">Scansiona codice</div>
+    <div class="swrap">
+      <video id="svid" autoplay playsinline muted></video>
+      <div class="sov"><div class="sfr"><div class="sln"></div></div></div>
+    </div>
+    <div class="shit">Inquadra il codice a barre della tessera.<br>Rilevamento automatico.</div>
+    <button class="bc" id="csc">Annulla</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ─── PRESET DATI ─────────────────────────────────────────
+const PR=[
+  {n:'Esselunga',t:'Supermercato',e:'🛒',g:['#2E3192','#1BFFFF']},
+  {n:'Conad',t:'Supermercato',e:'🛒',g:['#D31027','#EA384D']},
+  {n:'Carrefour',t:'Supermercato',e:'🛒',g:['#0052CC','#2684FF']},
+  {n:'Coop',t:'Supermercato',e:'🛒',g:['#11998e','#38ef7d']},
+  {n:'Eurospin',t:'Supermercato',e:'🛒',g:['#FC466B','#3F5EFB']},
+  {n:'Lidl',t:'Supermercato',e:'🛒',g:['#005BBB','#FFD500']},
+  {n:'Aldi',t:'Supermercato',e:'🛒',g:['#1A6B3C','#52C97D']},
+  {n:'Auchan',t:'Supermercato',e:'🛒',g:['#FF416C','#FF4B2B']},
+  {n:'Penny',t:'Supermercato',e:'🛒',g:['#DA8A67','#E96464']},
+  {n:'Pam',t:'Supermercato',e:'🛒',g:['#F7971E','#FFD200']},
+  {n:'Tigrì',t:'Supermercato',e:'🛒',g:['#0066cc','#00aaff']},
+  {n:'Tessera Sanitaria',t:'Sanitaria',e:'🏥',g:['#2193b0','#6dd5ed']},
+  {n:'Farmacia',t:'Farmacia',e:'💊',g:['#0f9b58','#56ccf2']},
+  {n:'Personale',t:'Altro',e:'💳',g:['#7F00FF','#E100FF']},
+];
+const AC=[['#FF6B6B','#FF8E53'],['#A855F7','#EC4899'],['#06B6D4','#6366F1'],
+          ['#10B981','#3B82F6'],['#F59E0B','#EF4444'],['#8B5CF6','#EC4899'],
+          ['#14B8A6','#6366F1'],['#F43F5E','#FB923C']];
+const GG=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+
+let tessere=JSON.parse(localStorage.getItem('st_t')||'[]');
+let cf={n:'',num:'',t:'Altro',g:['#7F00FF','#E100FF'],e:'💳'};
+let selId=null,sstream=null,sint=null,ml=false,gl=false;
+
+// ─── UTILS ───────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const fc=s=>s.replace(/(.{4})/g,'$1 ').trim();
+const sv=()=>localStorage.setItem('st_t',JSON.stringify(tessere));
+const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function barcode(code,w=180,h=36){
+  const seed=code.split('').reduce((a,c)=>a+c.charCodeAt(0),97);
+  let rects='',x=2;
+  for(let i=0;i<58;i++){
+    const bw=((seed*(i+1)*13)%3)+1;
+    const bh=((seed*(i+3)*7)%18)+h*.45;
+    const gap=((seed*(i+5))%3);
+    if((seed*(i+2))%3!==0)
+      rects+=`<rect x="${x}" y="${h-bh}" width="${bw}" height="${bh}" fill="rgba(255,255,255,.84)"/>`;
+    x+=bw+gap;
+    if(x>w-4)break;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" style="display:block">${rects}</svg>`;
+}
+
+// ─── NAVIGAZIONE ─────────────────────────────────────────
+function nav(s){
+  document.querySelectorAll('.scr').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(el=>el.classList.remove('on'));
+  $('s-'+s).classList.add('on');
+  document.querySelector(`[data-s="${s}"]`).classList.add('on');
+  $('fab').style.display=s==='t'?'flex':'none';
+  if(s==='m'&&!ml)loadMeteo();
+  if(s==='g'&&!gl)loadGossip();
+}
+document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.s)));
+
+// ─── MODAL ───────────────────────────────────────────────
+const om=id=>$(id).classList.add('on');
+const cm=id=>$(id).classList.remove('on');
+['mp','ma','md','msc'].forEach(id=>{
+  $(id).addEventListener('click',e=>{
+    if(e.target===$(id)){if(id==='msc')stopScan();cm(id);}
+  });
+});
+
+// ─── TESSERE ─────────────────────────────────────────────
+function renderT(){
+  const c=$('tc');
+  if(!tessere.length){
+    c.innerHTML='<div class="es"><div class="es-i">💳</div><div class="es-t">Nessuna tessera</div><div class="es-s">Tocca + per aggiungerne una</div></div>';
+    return;
+  }
+  c.innerHTML='<div class="clist">'+tessere.map(t=>`
+    <div class="tc" data-id="${t.id}" style="background:linear-gradient(135deg,${t.g[0]},${t.g[1]})">
+      <div class="ch"><span class="cemo">${t.e}</span><span class="ctipo">${t.t}</span></div>
+      <div class="cname">${esc(t.n)}</div>
+      <div class="cnum">${fc(t.num)}</div>
+      ${barcode(t.num)}
+    </div>`).join('')+'</div>';
+  c.querySelectorAll('.tc').forEach(el=>
+    el.addEventListener('click',()=>openDetail(el.dataset.id)));
+}
+
+function openDetail(id){
+  const t=tessere.find(x=>x.id===id);if(!t)return;
+  selId=id;
+  $('dc').innerHTML=`
+    <div class="dcard" style="background:linear-gradient(135deg,${t.g[0]},${t.g[1]})">
+      <div class="di">${t.e}</div><div class="dn">${esc(t.n)}</div>
+      <div class="dt">${t.t}</div><div class="dnum">${fc(t.num)}</div>
+      ${barcode(t.num,220,46)}
+    </div>`;
+  om('md');
+}
+
+$('bdel').addEventListener('click',()=>{
+  if(!confirm('Eliminare questa tessera?'))return;
+  tessere=tessere.filter(t=>t.id!==selId);
+  sv();cm('md');renderT();
+});
+$('cdt').addEventListener('click',()=>cm('md'));
+
+// ─── PRESET ──────────────────────────────────────────────
+$('fab').addEventListener('click',openPreset);
+function openPreset(){
+  $('pg').innerHTML=PR.map((p,i)=>`
+    <button class="pit" data-i="${i}" style="background:linear-gradient(135deg,${p.g[0]},${p.g[1]})">
+      <span class="e">${p.e}</span><span class="n">${p.n}</span>
+    </button>`).join('');
+  $('pg').querySelectorAll('.pit').forEach(b=>
+    b.addEventListener('click',()=>{
+      const p=PR[+b.dataset.i];
+      cf={n:p.n,num:'',t:p.t,g:p.g,e:p.e};
+      cm('mp');openAdd();
+    }));
+  om('mp');
+}
+$('bman').addEventListener('click',()=>{
+  cf={n:'',num:'',t:'Altro',g:['#7F00FF','#E100FF'],e:'💳'};
+  cm('mp');openAdd();
+});
+$('cpr').addEventListener('click',()=>cm('mp'));
+
+// ─── ADD ─────────────────────────────────────────────────
+function openAdd(){
+  $('in').value=cf.n;$('inum').value='';
+  updPrev();om('ma');
+}
+function updPrev(){
+  const n=$('in').value||cf.n||'Nome tessera';
+  const num=$('inum').value||'0000000000000';
+  $('prev').innerHTML=`
+    <div class="cprev" style="background:linear-gradient(135deg,${cf.g[0]},${cf.g[1]})">
+      <div class="ch"><span class="cemo">${cf.e}</span><span class="ctipo">${cf.t}</span></div>
+      <div class="cname">${esc(n)}</div><div class="cnum">${fc(num)}</div>
+    </div>`;
+}
+$('in').addEventListener('input',updPrev);
+$('inum').addEventListener('input',updPrev);
+$('bsv').addEventListener('click',()=>{
+  const n=$('in').value.trim(),num=$('inum').value.trim();
+  if(!n||!num){alert('Inserisci nome e numero');return;}
+  tessere.unshift({id:Date.now().toString(),n,num,t:cf.t,g:cf.g,e:cf.e});
+  sv();cm('ma');renderT();
+});
+$('cadd').addEventListener('click',()=>cm('ma'));
+
+// ─── BARCODE SCANNER ─────────────────────────────────────
+$('bscan').addEventListener('click',startScan);
+$('csc').addEventListener('click',()=>{stopScan();cm('msc');});
+
+async function startScan(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia(
+      {video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    sstream=stream;$('svid').srcObject=stream;om('msc');
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector(
+        {formats:['code_128','ean_13','ean_8','upc_a','upc_e','qr_code','data_matrix','itf']});
+      const vid=$('svid');
+      sint=setInterval(async()=>{
+        try{
+          const bs=await det.detect(vid);
+          if(bs.length>0){
+            const code=bs[0].rawValue;
+            stopScan();cm('msc');
+            $('inum').value=code;updPrev();
+          }
+        }catch(_){}
+      },350);
+    } else {
+      setTimeout(()=>{
+        stopScan();cm('msc');
+        const c=prompt('BarcodeDetector non disponibile.\nInserisci il codice manualmente:');
+        if(c){$('inum').value=c.trim();updPrev();}
+      },500);
+    }
+  }catch(e){
+    alert('Fotocamera non disponibile: '+e.message);
+  }
+}
+function stopScan(){
+  if(sint){clearInterval(sint);sint=null;}
+  if(sstream){sstream.getTracks().forEach(t=>t.stop());sstream=null;}
+}
+
+// ─── METEO ───────────────────────────────────────────────
+const WD=c=>{
+  if(c===0)return'Sereno';if(c<=2)return'Poco nuvoloso';if(c===3)return'Coperto';
+  if(c<=48)return'Nebbia';if(c<=55)return'Pioggerella';if(c<=67)return'Pioggia';
+  if(c<=77)return'Neve';if(c<=82)return'Rovesci';if(c<=99)return'Temporale';
+  return'Variabile';
+};
+const WI=c=>{
+  if(c===0)return'☀️';if(c<=2)return'⛅';if(c===3)return'☁️';
+  if(c<=48)return'🌫️';if(c<=55)return'🌦️';if(c<=67)return'🌧️';
+  if(c<=77)return'❄️';if(c<=82)return'🌦️';if(c<=99)return'⛈️';
+  return'🌤️';
+};
+const WBG=d=>{
+  const s=d.toLowerCase();
+  if(s.includes('sereno')||s.includes('poco'))return['#1a6699','#56CCF2'];
+  if(s.includes('coperto'))return['#3a3a5c','#6e6e9e'];
+  if(s.includes('pioggia')||s.includes('rov'))return['#1c2d40','#3a6ea8'];
+  if(s.includes('neve'))return['#6b7c8c','#b0c0cd'];
+  if(s.includes('temporale'))return['#0a0820','#1e1254'];
+  if(s.includes('nebbia'))return['#4a5160','#6e7a8a'];
+  return['#1A1A2E','#16213E'];
+};
+
+async function loadMeteo(){
+  ml=true;
+  const c=$('mc');
+  c.innerHTML='<div class="es"><div class="spin"></div><div class="stxt">Rilevando la posizione…</div></div>';
+  if(!navigator.geolocation){fetchMCity('Roma');return;}
+  navigator.geolocation.getCurrentPosition(
+    p=>fetchMCoords(p.coords.latitude,p.coords.longitude),
+    ()=>fetchMCity('Roma'),{timeout:10000,maximumAge:120000}
+  );
+}
+async function fetchMCoords(lat,lon){
+  try{
+    const r=await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=it`,
+      {headers:{'User-Agent':'StellaApp/1.0'}});
+    const d=await r.json();
+    const city=d.address?.city||d.address?.town||d.address?.village||d.address?.county||'Roma';
+    fetchMCity(city);
+  }catch{fetchMCity('Roma');}
+}
+async function fetchMCity(city){
+  const c=$('mc');
+  try{
+    const gr=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=it&format=json`);
+    const gd=await gr.json();
+    if(!gd.results?.length)throw new Error('nf');
+    const{latitude:lat,longitude:lon,name}=gd.results[0];
+    const mr=await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`+
+      `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`+
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min`+
+      `&timezone=Europe/Rome&forecast_days=4`);
+    const md=await mr.json();
+    const cur=md.current,daily=md.daily;
+    const desc=WD(cur.weather_code);
+    const bg=WBG(desc);
+    $('s-m').style.background=`linear-gradient(155deg,${bg[0]},${bg[1]})`;
+    const prev=daily.time.slice(1,4).map((d,i)=>({
+      g:GG[new Date(d).getDay()],
+      min:Math.round(daily.temperature_2m_min[i+1]),
+      max:Math.round(daily.temperature_2m_max[i+1]),
+      i:WI(daily.weather_code[i+1]),
+      d:WD(daily.weather_code[i+1])
+    }));
+    const now=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    c.innerHTML=`
+      <div class="mcard">
+        <div class="mcity">📍 ${esc(name)}</div>
+        <div class="mico">${WI(cur.weather_code)}</div>
+        <div class="mtemp">${Math.round(cur.temperature_2m)}°</div>
+        <div class="mdesc">${desc}</div>
+        <div class="mrow">
+          <div class="mdet"><span class="mdi">💧</span><span class="mdv">${cur.relative_humidity_2m}%</span><span class="mdl">Umidità</span></div>
+          <div class="mdivl"></div>
+          <div class="mdet"><span class="mdi">💨</span><span class="mdv">${Math.round(cur.wind_speed_10m)} km/h</span><span class="mdl">Vento</span></div>
+        </div>
+      </div>
+      <div class="ftit">Prossimi 3 giorni</div>
+      <div class="flist">${prev.map(p=>`
+        <div class="frow">
+          <span class="fday">${p.g}</span>
+          <span class="fico">${p.i}</span>
+          <span class="fdesc">${p.d}</span>
+          <div class="ftemps"><div class="fmax">${p.max}°</div><div class="fmin">${p.min}°</div></div>
+        </div>`).join('')}
+      </div>
+      <div class="upd">Aggiornato alle ${now} · Open-Meteo</div>
+      <button class="rbtn" onclick="reloadM()">&#x1F504;&nbsp; Aggiorna posizione</button>`;
+  }catch{
+    c.innerHTML='<div class="es"><div class="es-i">🌩️</div><div class="es-t" style="font-size:16px;margin-top:12px">Impossibile caricare il meteo.<br>Controlla la connessione.</div><button class="bp" style="max-width:200px;margin-top:20px" onclick="reloadM()">Riprova</button></div>';
+  }
+}
+function reloadM(){ml=false;loadMeteo();}
+
+// ─── GOSSIP ──────────────────────────────────────────────
+const FEEDS=[
+  {url:'https://www.gossipetv.com/feed',src:'GossipTV'},
+  {url:'https://tvblog.it/feed/',src:'TVBlog'},
+  {url:'https://www.bitchyf.it/feed/',src:'BitchyF'},
+];
+function fmtDate(s){
+  try{return new Date(s).toLocaleDateString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
+  catch{return s||'';}
+}
+async function loadGossip(){
+  gl=true;
+  const c=$('gc');
+  c.innerHTML='<div class="es"><div class="spin"></div><div class="stxt">Caricando le ultime notizie…</div></div>';
+  const all=[];
+  await Promise.allSettled(FEEDS.map(async({url,src})=>{
+    try{
+      const r=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`);
+      const d=await r.json();
+      if(d.status==='ok'&&d.items)
+        d.items.forEach(it=>{
+          if(it.title&&it.link)all.push({
+            id:it.guid||it.link,
+            title:it.title.replace(/<[^>]+>/g,'').trim(),
+            desc:(it.description||'').replace(/<[^>]+>/g,'').trim().substring(0,180),
+            link:it.link,date:fmtDate(it.pubDate),src
+          });
+        });
+    }catch(_){}
+  }));
+  if(!all.length){
+    c.innerHTML='<div class="es"><div class="es-i">📰</div><div class="es-t">Nessuna notizia</div><div class="es-s">Controlla la connessione e riprova.</div><button class="bp" style="max-width:200px;margin-top:20px" onclick="reloadG()">Riprova</button></div>';
+    return;
+  }
+  const seen=new Set();
+  const uni=all.filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true;}).slice(0,40);
+  c.innerHTML=uni.map((it,i)=>{
+    const ac=AC[i%AC.length];
+    return`<div class="gc" onclick="window.open('${esc(it.link)}','_blank')">
+      <div class="gstrip" style="background:linear-gradient(180deg,${ac[0]},${ac[1]})"></div>
+      <div class="gbody">
+        <div class="gmeta"><span class="gsrc">${it.src}</span><span class="gdate">${it.date}</span></div>
+        <div class="gtit">${esc(it.title)}</div>
+        ${it.desc?`<div class="gdesc">${esc(it.desc)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function reloadG(){gl=false;loadGossip();}
+
+// ─── INIT ────────────────────────────────────────────────
+renderT();
+if('serviceWorker' in navigator)
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
